@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('user_code')->unique();
             $table->string('parent_code');
             $table->string('numero_CNI');
-            $table->date('date_de_naissance')->date_format('d-m-Y');
+            $table->date('date_de_naissance');
             $table->string('numero_commercial');
             $table->string('localisation');
            

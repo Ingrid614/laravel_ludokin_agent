@@ -16,13 +16,13 @@ class UserController extends Controller
     {
         DB::beginTransaction();
         try {
-            $resp = ['error' => null, 'data' => null];
+            $resp = ['error' => null, 'data' => null , 'id' => null];
             $validated = Validator::make($request->all(), [
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => ['required', 'string'],
                 'numero_CNI' => 'nullable|present',
-                'date_de_naissance' => ['required'],
+                'date_de_naissance' => ['required','date_format:Y-m-d'],
                 'localisation' => 'present|string',
                 'user_code' => 'present|string|unique:users',
                 'parent_code' => 'nullable|string'
@@ -47,8 +47,9 @@ class UserController extends Controller
             ]);
             DB::commit();
             $resp['data'] = $user;
+            $resp['id'] = $user->id;
 
-            return $resp['data'];
+            return $resp;
         } catch (Exception $e) {
             $resp['error'] = $e->getMessage();
             DB::rollBack();
@@ -92,13 +93,12 @@ class UserController extends Controller
         try {
             $user = User::find($id);
 
-            $resp = ['error' => null, 'data' => null];
+            $resp = ['error' => null, 'data' => null, 'id' => null];
             $validated = Validator::make($request->all(), [
                 'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-                'password' => ['required', 'string'],
                 'numero_CNI' => 'nullable|present',
-                'date_de_naissance' => ['required'],
+                'numero_commercial' => 'nullable|present',
+                'date_de_naissance' => ['required','date_format:Y-m-d'],
                 'localisation' => 'nullable|present|string'
             ]);
             if ($validated->fails()) {
@@ -109,8 +109,6 @@ class UserController extends Controller
             $data = $request->all();
 
             $user->name = $data['name'];
-            $user->email=$data['email'];
-            $user->password = $data['password'];
             $user->numero_CNI = $data['numero_CNI'];
             $user->date_de_naissance = $data['date_de_naissance'];
             $user->numero_commercial = $data['numero_commercial'];
@@ -132,7 +130,7 @@ class UserController extends Controller
             $resp = ['error' => null, 'data' => null];
             $data = $request->all();
             $validated=Validator::make($request->all(),[
-                'name'=> 'required|string',
+                'email'=> 'required|string',
                 'password'=>'required|string'
             ]);
 
@@ -142,7 +140,7 @@ class UserController extends Controller
             }
 
 
-            $user = User::where('name', $data['name'])->get()->shift();
+            $user = User::where('email', $data['email'])->get()->shift();
 
             if ($user) {
                 $user->makeVisible(['password']);
@@ -150,13 +148,14 @@ class UserController extends Controller
                 if (Hash::check($data['password'], $password)) {
                     $user->makeHidden(['password']);
                     $resp['data'] = $user;
+                    $resp['id'] = $user->id;
                     return Functions::setResponse($resp, 200);
                 } else {
-                    $resp['error'] = 'Wrong credentials';
+                    $resp['error'] = 'wrong credentials';
                     return Functions::setResponse($resp, 401);
                 }
             } else {
-                $resp['error'] = 'No user found';
+                $resp['error'] = 'no user found';
                 return Functions::setResponse($resp, 401);
             }
            

@@ -33,8 +33,7 @@ class CommissionController extends Controller
             'commande_id' => $data['commande_id'],
             'taux' =>$data['taux'],
             'montant_commission' => $montantCommande*$data['taux']*0.01,                                    
-        ]);
-        
+        ]);      
         $resp['data']=$commission;
         DB::commit(); 
     }catch(Exception $e){
