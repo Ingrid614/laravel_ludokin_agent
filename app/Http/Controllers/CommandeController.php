@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Commande;
 use Illuminate\Http\Request;
 use App\Functions;
+use App\Models\Client;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Commission;
 use App\Models\Settings;
-
+use App\Models\User;
+use Exception;
 
 class CommandeController extends Controller
 {
@@ -18,25 +20,47 @@ class CommandeController extends Controller
     {
         try {
             DB::beginTransaction();
-            $resp = ['error' => null, 'data' => null];
+            $resp = ['error' => null, 'data' => null , 'command' => null];
             $validated = Validator::make($request->all(), [
                 'user_id' => ['required', 'integer'],
-                'client_id' => ['required', 'integer'],
-                'adresse_kin' => ['required', 'string'],
+                'adresse_kin' =>['required','string'],
+                // 'client_id' => ['required', 'integer'],
                 'montant' => ['required', 'numeric'],
                 'statut_id' => ['integer']
             ]);
-
+            
             if ($validated->fails()) {
                 $resp['error'] = $validated->errors();
                 return Functions::setResponse($resp, 500);
             }
+
+            
             $data = $request->all();
             $montant_cout = $data['montant'] * Settings::find(1)->taux_cout * 0.01;
             $montantCommission = $data['montant'] * Settings::find(1)->taux_commission * 0.01;
+
+            $client = Client::where('adresse_kin',$data['adresse_kin'])->first();
+            if(!$client){
+                $validated = Validator::make($request->all(),[
+                    'adresse_kin' =>['required','string'],
+                    'email_client'=> ['required','string','email'],
+                    'nom_client'=> ['required','string','max:255'],
+                    'numero_whatsapp' =>['required','string',],
+                ]);
+                if($validated->fails()){
+                    $resp['error']=$validated->errors();
+                    return Functions::setResponse($resp,500);
+                }
+                $client= Client::create([
+                    'adresse_kin' => $data['adresse_kin'],
+                    'numero_whatsapp' => $data['numero_whatsapp'],
+                    'email_client' =>$data['email_client'],
+                    'nom_client' => $data['nom_client'],
+                ]);
+            }
             $command = Commande::create([
                 'user_id' => $data['user_id'],
-                'client_id' => $data['client_id'],
+                'client_id' => $client['id'],
                 'adresse_kin' => $data['adresse_kin'],
                 'montant' => $data['montant'],
                 'taux' => Settings::find(1)->taux_cout,
@@ -50,7 +74,8 @@ class CommandeController extends Controller
                 'taux' => Settings::find(1)->taux_commission,
                 'montant_commission' => $montantCommission,
             ]);
-            $resp['data'] = ['command' => $command, 'commision' => $commission];
+            $resp['data'] = ['command' => $command, 'commision' => $commission, 'client'=> $client];
+            $resp['command'] = $command;
             DB::commit();
         } catch (Exception $e) {
             dd($e->getMessage());

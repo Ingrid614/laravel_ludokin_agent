@@ -21,7 +21,7 @@ class ClientController extends Controller
         $resp=['error'=>null,'data'=>null];
         $validated = Validator::make($request->all(),[
             'adresse_kin' =>['required','string'],
-            'email_client'=> ['required','string','email','unique:clients'],
+            'email_client'=> ['required','string','email'],
             'nom_client'=> ['required','string','max:255'],
             'numero_whatsapp' =>['required','string',],
            

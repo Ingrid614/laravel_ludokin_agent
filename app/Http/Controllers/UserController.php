@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
 use App\Functions;
+use App\Models\Commande;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -21,7 +23,7 @@ class UserController extends Controller
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => ['required', 'string'],
-                'numero_CNI' => 'nullable|present',
+                'numero_CNI' => 'nullable|present|unique:users',
                 'date_de_naissance' => ['required','date_format:Y-m-d'],
                 'localisation' => 'present|string',
                 'user_code' => 'present|string|unique:users',
@@ -165,6 +167,18 @@ class UserController extends Controller
             dd($e->getMessage());
             return $resp;
         }
+    }
+
+    public function getCommandUser($id){
+        $resp = ['data'=>null, 'error'=>null];
+        $user = User::find($id);
+        if(!$user){
+            $resp['error'] = "No user found";
+            return Functions::setResponse($resp,401);
+        }
+        $command = Commande::whereUserId($id)->latest()->get();
+        $resp['data'] = $command;
+        return Functions::setResponse($resp,200);
     }
 
 }
