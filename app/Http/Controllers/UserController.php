@@ -27,7 +27,6 @@ class UserController extends Controller
                 'date_de_naissance' => ['required','date_format:Y-m-d'],
                 'localisation' => 'present|string',
                 'user_code' => 'present|string|unique:users',
-                'parent_code' => 'nullable|string'
             ]);
             if ($validated->fails()) {
                 $resp['error'] = $validated->errors();
@@ -45,7 +44,7 @@ class UserController extends Controller
                 'numero_commercial' => $data['numero_commercial'] ?? "",
                 'localisation' => $data['localisation'],
                 'user_code' => $data['user_code'],
-                'parent_code' => $data['parent_code']
+                'parent_code' => $data['parent_code']?? null
             ]);
             DB::commit();
             $resp['data'] = $user;
@@ -176,9 +175,65 @@ class UserController extends Controller
             $resp['error'] = "No user found";
             return Functions::setResponse($resp,401);
         }
-        $command = Commande::whereUserId($id)->latest()->get();
+        $command = Commande::with('client')->whereUserId($id)->latest()->get();
+        $resp['data'] = $command;
+        return Functions::setResponse($resp,200);
+    }
+    public function getRecentCommandUser($id){
+        $resp = ['data'=>null, 'error'=>null];
+        $user = User::find($id);
+        if(!$user){
+            $resp['error'] = "No user found";
+            return Functions::setResponse($resp,401);
+        }
+        $command = Commande::with('client')->whereUserId($id)->latest()->take(6)->get();
         $resp['data'] = $command;
         return Functions::setResponse($resp,200);
     }
 
+    public function newPassword($id,Request $request){
+        DB::beginTransaction();
+       try{
+        $resp = ['data'=>null,'error'=>null];
+        $user = User::find($id);
+        $data = $request->all();
+        $validated = Validator::make($request->all(),
+        [
+            'old_password' => 'required|string',
+            'new_password' => 'required|string',
+            'confirm_password' => 'required|string'
+        ]);
+
+        if($validated->fails()){
+            $resp['error'] = $validated->errors();
+            return Functions::setResponse($resp,500);
+        }
+
+        if($user){
+            $user->makeVisible(['password']);
+            if(Hash::check($data['old_password'],$user->password)){
+                $user->makeHidden(['password']);
+                if($data['new_password'] == $data['confirm_password']){
+                    $user->password = Hash::make($data['new_password']);
+                }else{
+                    $resp['error'] = 'error in password confirmation';
+                    return Functions::setResponse($resp,401);
+                }
+            }else{
+                $resp['error'] = 'wrong password';
+                return Functions::setResponse($resp,401);
+            }
+        }else{
+            $resp['error'] = 'no user found';
+            return Functions::setResponse($resp,401);
+        }
+        DB::commit();
+    }catch(Exception $e){
+        $resp['error'] = $e->getMessage();
+        DB::rollBack();
+    }
+        return $resp;
+    }
+
 }
+

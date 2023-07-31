@@ -24,7 +24,6 @@ class CommandeController extends Controller
             $validated = Validator::make($request->all(), [
                 'user_id' => ['required', 'integer'],
                 'adresse_kin' =>['required','string'],
-                // 'client_id' => ['required', 'integer'],
                 'montant' => ['required', 'numeric'],
                 'statut_id' => ['integer']
             ]);
@@ -65,7 +64,7 @@ class CommandeController extends Controller
                 'montant' => $data['montant'],
                 'taux' => Settings::find(1)->taux_cout,
                 'cout' => $montant_cout,
-                'statut_id' => $data['statut_id'],
+                'statut_id' => $data['statut_id']
             ]);
 
             $commission = Commission::create([
@@ -78,7 +77,7 @@ class CommandeController extends Controller
             $resp['command'] = $command;
             DB::commit();
         } catch (Exception $e) {
-            dd($e->getMessage());
+            // dd($e->getMessage());
             $resp['error'] = $e->getMessage();
             DB::rollBack();
         }

@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Functions;
+use App\Models\Statut;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class StatutController extends Controller
 {

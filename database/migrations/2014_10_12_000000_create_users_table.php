@@ -22,7 +22,7 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
             $table->string('user_code')->unique();
-            $table->string('parent_code');
+            $table->string('parent_code')->nullable(true);
             $table->string('numero_CNI');
             $table->date('date_de_naissance');
             $table->string('numero_commercial');

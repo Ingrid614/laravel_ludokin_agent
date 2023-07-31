@@ -32,7 +32,9 @@ Route::prefix('users')->group(function () {
     Route::put('{id}',[UserController::class,'update']);
     Route::delete('{id}',[UserController::class,'delete']);
     Route::post('login',[UserController::class, 'Login']);
+    Route::put('password/{id}',[UserController::class,'newPassword']);
     Route::get('command/{id}',[UserController::class, 'getCommandUser']);
+    Route::get('recentCommand/{id}',[UserController::class, 'getRecentCommandUser']);
 });
 
 Route::prefix('clients')->group(function () {
